@@ -1,10 +1,23 @@
+using BuyingLibrary.Contexts;
+using Microsoft.Extensions.Configuration;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors();
 
+builder.Services.Configure<Settings>(options => {
+
+    options.ConnectionStrings = builder.Configuration.GetConnectionString("MongoConnection:ConnectionString");
+    options.DataBase = builder.Configuration.GetSection("MongoConnection:DataBase").Value;
+
+});
+
+
+
 var app = builder.Build();
 
-app.UseCors(builder => builder.WithOrigins("http://localhost:4200", "http://localhost:4300")
+app.UseCors(builder => builder.WithOrigins("http://localhost:4300")
 .AllowAnyHeader()
 .AllowAnyMethod()); 
 
