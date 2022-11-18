@@ -4,6 +4,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0.1</Version>
+    <Authors>Timmy</Authors>
+    <Description>simple dotnet server</Description>
+    <PackageReleaseNotes>first variant of working server</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
