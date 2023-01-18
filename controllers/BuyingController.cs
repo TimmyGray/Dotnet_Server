@@ -9,7 +9,7 @@ namespace Aspnet_server.controllers
     [Route("/[controller]")]
     public class BuysController : ControllerBase
     {
-        private IService<Buy> service;
+        private readonly IService<Buy> service;
 
         public BuysController(MongoContext context)
         {
