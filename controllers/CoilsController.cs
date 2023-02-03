@@ -6,11 +6,11 @@ namespace Aspnet_server.controllers
 {
     [ApiController]
     [Route("/[controller]")]
-    public class CoilController:ControllerBase
+    public class CoilsController:ControllerBase
     {
         private readonly IService<Coil> service;
 
-        public CoilController(MongoContext context)
+        public CoilsController(MongoContext context)
         {
 
             service = new CoilService(context);

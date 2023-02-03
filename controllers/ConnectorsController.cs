@@ -6,11 +6,11 @@ namespace Aspnet_server.controllers
 {
     [ApiController]
     [Route("/[controller]")]
-    public class ConnectorController:ControllerBase
+    public class ConnectorsController:ControllerBase
     {
-        private IService<Connector> service;
+        private readonly IService<Connector> service;
         
-        public ConnectorController(MongoContext context)
+        public ConnectorsController(MongoContext context)
         {
             service = new ConnectorService(context);
         }

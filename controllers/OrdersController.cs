@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using BuyingLibrary.models.classes;
 using BuyingLibrary.models.interfaces;
+using MongoDB.Driver;
+using Aspnet_server.mail_sender;
 
 namespace Aspnet_server.controllers
 {
@@ -9,7 +11,7 @@ namespace Aspnet_server.controllers
     [Route("/[controller]")]
     public class OrdersController:ControllerBase
     {
-        private IService<Order> service;
+        private readonly OrderService service;
 
         public OrdersController(MongoContext context)
         {
@@ -24,18 +26,42 @@ namespace Aspnet_server.controllers
 
         }
 
-        [HttpGet("{id:length(24)}")]
-        public async Task<ActionResult<Order>> GetOrder(string id)
+        [HttpGet("{clientid:length(24)}")]
+        
+        public async Task<ActionResult<List<Order>>> GetOrders(string clientid)
         {
 
-            var order = await service.GetAsync(id);
-            if (order != null)
+            var orders = await service.GetAsync(clientid);
+            if (orders!=null)
             {
-                return order;
+                foreach (var o in orders)
+                {
+
+                    Console.WriteLine(o.ToString());
+
+                }
+                return Ok(orders);
             }
-            return NotFound();
+
+            return BadRequest();
 
         }
+
+        [HttpGet("{clientid:length(24)}/{orderid:length(24)}")]
+        public async Task<ActionResult<Order>> GetAsync(string clientid,string orderid)
+        {
+            
+            var order = await service.GetAsync(clientid, orderid);
+            if (order!=null)
+            {
+                Console.WriteLine(order.ToString());
+                return Ok(order);
+            }
+
+            return BadRequest();
+
+        }
+        
 
         [HttpPost]
         public async Task<ActionResult<Order>> PostOrder(Order neworder)
@@ -45,7 +71,12 @@ namespace Aspnet_server.controllers
                 return NoContent();
             }
 
+
             var result = await service.PostAsync(neworder);
+
+            MailSender sender = new MailSender(neworder, true);
+            sender.SendMail();
+
 
             return result;
 

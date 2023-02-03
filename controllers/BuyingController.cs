@@ -2,6 +2,7 @@
 using BuyingLibrary.Contexts;
 using BuyingLibrary.models.classes;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 
 namespace Aspnet_server.controllers
 {
@@ -20,7 +21,13 @@ namespace Aspnet_server.controllers
         public async Task<List<Buy>> GetBuys()
         {
 
-            return await service.GetAsync();
+            var buys = await service.GetAsync();
+            foreach (var buy in buys)
+            {
+                buy.Count = 1;
+                Console.WriteLine(buy.ToString());
+            }
+            return buys;
 
         }
 
@@ -43,7 +50,7 @@ namespace Aspnet_server.controllers
             if (newbuy == null)
             {
                 return NoContent();
-            }
+            } 
 
             var result = await service.PostAsync(newbuy);
 
