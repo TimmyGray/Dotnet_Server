@@ -11,19 +11,25 @@ namespace Aspnet_server.controllers
     public class BuysController : ControllerBase
     {
         private readonly IService<Buy> service;
+        private readonly ImageService imageService;
 
         public BuysController(MongoContext context)
         {
             service = new BuyingService(context);
+            imageService = new ImageService(context);
         }
 
         [HttpGet]
         public async Task<List<Buy>> GetBuys()
         {
-
+            var images = await imageService.GetAllAsync();
             var buys = await service.GetAsync();
             foreach (var buy in buys)
             {
+                buy.Image.Data = images.FirstOrDefault(i => i._id == buy.Image._id).Data;
+
+                Console.WriteLine($"{buy.Image.Data.Length}");
+
                 buy.Count = 1;
                 Console.WriteLine(buy.ToString());
             }

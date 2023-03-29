@@ -23,12 +23,5 @@ app.UseCors(builder => builder.WithOrigins("http://localhost:4300")
 app.MapControllers();
 app.MapGet("/", async context => await context.Response.WriteAsync("Hello there"));
 
-//app.MapGet("/postmsg", async context => await context.Response.WriteAsync(context.Request.Body.Length.ToString()));
-
-//string url = "https://localhost:5000";
-
-
 app.Run();
-
-//Console.WriteLine($"server listen on port: {url}");
 
