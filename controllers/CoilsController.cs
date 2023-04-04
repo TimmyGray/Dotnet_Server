@@ -18,19 +18,19 @@ namespace Aspnet_server.controllers
         }
 
         [HttpGet]
-        public async Task<List<string>> Get()
+        public async Task<List<Coil>> Get()
         {
             
             var Coils = await service.GetAsync();
-            List<string> coils = new List<string>();
             
             foreach (var coil in Coils) 
             {
-            
-                coils.Add($"{coil.Name}-{coil.Type}");
+
+                coil.Length = 1;
+
             }
 
-            return coils;
+            return Coils;
 
         }
 

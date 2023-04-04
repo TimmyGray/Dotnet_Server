@@ -16,17 +16,16 @@ namespace Aspnet_server.controllers
         }
 
         [HttpGet]
-        public async Task<List<string>> GetConnectors()
+        public async Task<List<Connector>> GetConnectors()
         {
-            List<string> connectors = new List<string>();
             
             var Connectors = await service.GetAsync();
             foreach(var con in Connectors)
             {
-                connectors.Add($"{con.Name}-{con.Type}");
+                con.Count = 1;
             }
 
-            return connectors;
+            return Connectors;
 
         }
 

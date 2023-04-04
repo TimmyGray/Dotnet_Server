@@ -22,13 +22,13 @@ namespace Aspnet_server.controllers
         [HttpGet]
         public async Task<List<Buy>> GetBuys()
         {
-            var images = await imageService.GetAllAsync();
+            //var images = await imageService.GetAllAsync();
             var buys = await service.GetAsync();
             foreach (var buy in buys)
             {
-                buy.Image.Data = images.FirstOrDefault(i => i._id == buy.Image._id).Data;
+                //buy.Image.Data = images.FirstOrDefault(i => i._id == buy.Image._id).Data;
 
-                Console.WriteLine($"{buy.Image.Data.Length}");
+                //Console.WriteLine($"{buy.Image.Data.Length}");
 
                 buy.Count = 1;
                 Console.WriteLine(buy.ToString());
@@ -48,6 +48,14 @@ namespace Aspnet_server.controllers
             }
             return NotFound();
 
+        }
+
+        [Route("getimage/{id}")]
+        public async Task GetImage(string id)
+        {
+            Console.WriteLine("Gt Image");
+            await imageService.GetOne(id,Response.Body);
+            //return Response;
         }
 
         [HttpPost]
