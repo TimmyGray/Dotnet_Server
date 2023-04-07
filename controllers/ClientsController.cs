@@ -36,6 +36,7 @@ namespace Aspnet_server.controllers
         [HttpPost]
         public async Task<ActionResult<Client>> PostClient(Client newclient) 
         {
+            Console.WriteLine("Post client controller");
             if (newclient._id!="")
             {
                 var client = await service.GetAsync(newclient._id);

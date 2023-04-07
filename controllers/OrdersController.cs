@@ -66,6 +66,8 @@ namespace Aspnet_server.controllers
         [HttpPost]
         public async Task<ActionResult<Order>> PostOrder(Order neworder)
         {
+            Console.WriteLine("Post order controller");
+
             if (neworder == null)
             {
                 return NoContent();
