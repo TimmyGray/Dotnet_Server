@@ -15,6 +15,9 @@ namespace Aspnet_server.mail_sender
         private Order order;
         private string email;
         private string password;
+        private string name;
+        private string host;
+        private int hostport;
         private readonly bool isRus;
         public MailSender(Order order, bool isRus)
         {
@@ -37,6 +40,9 @@ namespace Aspnet_server.mail_sender
                     {
                         email = (string)settingsjson!["email"]!;
                         password = (string)settingsjson!["password"]!;
+                        name = (string)settingsjson!["name"]!;
+                        host = (string)settingsjson!["host"]!;
+                        hostport = (int)settingsjson!["hostport"]!;
                     }
 
                 }
@@ -74,7 +80,7 @@ namespace Aspnet_server.mail_sender
             }
 
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("Timmy", email));
+            message.From.Add(new MailboxAddress($"{name}", email));
             message.To.Add(new MailboxAddress(order.client.Name,order.client.Email));
             message.Subject = $"{order.client.Name}, your order created!";
             message.Body = new TextPart("plain")
@@ -88,7 +94,7 @@ namespace Aspnet_server.mail_sender
                 using (SmtpClient client = new SmtpClient())
                 {
 
-                    client.Connect("smtp.yandex.ru", 465, MailKit.Security.SecureSocketOptions.SslOnConnect);
+                    client.Connect($"{host}", hostport, MailKit.Security.SecureSocketOptions.SslOnConnect);
                     client.Authenticate(email, password);
                     client.Send(message);
                     client.Disconnect(true);
