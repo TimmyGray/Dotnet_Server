@@ -10,6 +10,8 @@ This is a server for the Staff Buying Client application that you could find by 
 All models and services using in the app,are placing in the single library https://github.com/TimmyGray/BuyingLibrary;  
 Each controller implemented only methods that are using in frontend (not of all crud operations)  
 Simple email sending also implemented  
+This server using controllers sending buys, cable components and prices to the frontend application and get orders and clients from it and store them in mongo db  
+
 
 How to run:  
 1) Clone this repo  
@@ -20,6 +22,6 @@ How to run:
 6) Build this project  
 7) Run Aspnet_server.exe. You will see "Hello there" when you open browser on AppUrl adress  
 
-  
+Stack: ASP.NET Core
 
 
