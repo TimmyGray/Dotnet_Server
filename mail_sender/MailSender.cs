@@ -1,6 +1,8 @@
-﻿using BuyingLibrary.models.classes;
+﻿using BuyingLibrary.AppSettings;
+using BuyingLibrary.models.classes;
 using MailKit.Net;
 using MailKit.Net.Smtp;
+using Microsoft.Extensions.Options;
 using MimeKit;
 using System.Text;
 using System.Text.Json;
@@ -10,74 +12,83 @@ using System.Text.Json.Serialization;
 
 namespace Aspnet_server.mail_sender
 {
-    internal class MailSender
+    public class MailSender
     {
-        private Order order;
+        private IOptions<MailOptions> _options;
         private string email;
         private string password;
         private string name;
         private string host;
         private int hostport;
-        private readonly bool isRus;
-        public MailSender(Order order, bool isRus)
+        public bool Setup { get; }
+
+        public MailSender(IOptions<MailOptions> options )
         {
+            _options = options;
+            //Console.WriteLine($"{_options.Value.Email}");
+            //Console.WriteLine($"{_options.Value.Host}");
+            //Console.WriteLine($"{_options.Value.Port}");
+            //Console.WriteLine($"{_options.Value.Name}");
 
-            this.order = order;
-            this.isRus = isRus;
-        }
-
-        private void CheckSettings()
-        {
-            string path = Directory.GetCurrentDirectory()+ "\\mail_sender\\emailsettings.json";
-            Console.WriteLine(path);
-
-            using (StreamReader s = File.OpenText(path))
-            {
-                try
-                {
-                    JsonNode settingsjson = JsonNode.Parse(s.ReadToEnd());
-                    if (settingsjson != null)
-                    {
-                        email = (string)settingsjson!["email"]!;
-                        password = (string)settingsjson!["password"]!;
-                        name = (string)settingsjson!["name"]!;
-                        host = (string)settingsjson!["host"]!;
-                        hostport = (int)settingsjson!["hostport"]!;
-                    }
-
-                }
-                catch (Exception ex)
-                {
-
-                    Console.WriteLine(ex.Message);
-                }
+            if ( _options.Value.Email=="" ) {
+                Setup = false;
+                Console.WriteLine("Settings not read!");
             }
+            else
+            {
+                Setup = true;
+            }
+            email = _options.Value.Email;
+            password = _options.Value.Password;
+            host = _options.Value.Host;
+            hostport = Convert.ToInt32(_options.Value.Port);
+            name = _options.Value.Name;
+
+            Console.WriteLine("The mailsender created!");
         }
 
-        private string MakeBody(bool isRus)
+        private string MakeBody(Order order,bool isRus)
         {
             StringBuilder body = new StringBuilder();
-            body.AppendLine($"Здравствуйте,{order.client.Name}!");
-            body.AppendLine($"Некоторое время назад, вы сделали заказ {order._id}:");
-            foreach (var buy in order.Buys)
-            {
-                body.AppendLine(buy.ToString());
+
+            if (isRus) {
+
+                body.AppendLine($"Здравствуйте,{order.client.Name}!");
+                body.AppendLine($"Некоторое время назад, вы сделали заказ {order._id}:");
+                foreach (var buy in order.Buys)
+                {
+                    body.AppendLine(buy.ToString());
+                }
+                body.AppendLine("Об изменении статуса заказа вам придет отдельное сообщение");
+                body.AppendLine($"Статус вашего заказа:{order.Status}");
+                body.AppendLine($"Если у вас есть какие-то вопросы - пишите на почту {email}, с указанием номера заказа");
+
             }
-            body.AppendLine("Об изменении статуса заказа вам придет отдельное сообщение");
-            body.AppendLine($"Статус вашего заказа:{order.Status}");
-            body.AppendLine($"Если у вас есть какие-то вопросы - пишите на почту {email}, с указанием номера заказа");
+            else
+            {
+                body.AppendLine($"Hello,{order.client.Name}!");
+                body.AppendLine($"Some times ago you make an order: {order._id}:");
+                foreach (var buy in order.Buys)
+                {
+                    body.AppendLine(buy.ToString());
+                }
+                body.AppendLine("When the status order has changed - you will receive a message on your email");
+                body.AppendLine($"Current status order:{order.Status}");
+                body.AppendLine($"If you have some questions - write on {email} with order id");
+
+            }
             return body.ToString();
         }
 
-        internal void SendMail()
+        internal void SendMail(Order order, bool isRus)
         {
-
-            CheckSettings();
-            if (email==null||password==null)
+            Console.WriteLine("Mail send method");
+            //CheckSettings();
+            if (!Setup)
             {
-                Console.WriteLine("Invalid email or password");
                 return;
             }
+            Console.WriteLine("All right!");
 
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress($"{name}", email));
@@ -85,7 +96,7 @@ namespace Aspnet_server.mail_sender
             message.Subject = $"{order.client.Name}, your order created!";
             message.Body = new TextPart("plain")
             {
-                Text = MakeBody(isRus)
+                Text = MakeBody(order,isRus)
             
             };
 
@@ -100,7 +111,7 @@ namespace Aspnet_server.mail_sender
                     client.Disconnect(true);
 
                 }
-
+                Console.WriteLine("The message sended!");
             }
             catch (Exception ex)
             {

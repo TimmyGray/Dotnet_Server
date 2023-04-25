@@ -12,9 +12,13 @@ namespace Aspnet_server.controllers
     public class OrdersController:ControllerBase
     {
         private readonly OrderService service;
+        private readonly MailSender mailsender;
 
-        public OrdersController(MongoContext context)
+        public OrdersController(MongoContext context, MailSender _mailsender)
         {
+            Console.WriteLine("Order Controller");
+            Console.WriteLine($"EmailMail sender setup - {_mailsender.Setup}");
+            mailsender = _mailsender;
             service = new OrderService(context);
         }
 
@@ -75,9 +79,9 @@ namespace Aspnet_server.controllers
 
 
             var result = await service.PostAsync(neworder);
-
-            MailSender sender = new MailSender(neworder, true);
-            sender.SendMail();
+        
+            Console.WriteLine("Try to send mail...");
+            mailsender.SendMail(neworder,false);
 
 
             return result;

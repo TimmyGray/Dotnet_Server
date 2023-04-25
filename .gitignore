@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 
 /mail_sender/emailsettings.json
+
+appsettings.Development.json
+appsettings.Production.json
