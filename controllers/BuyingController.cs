@@ -1,11 +1,13 @@
 ﻿using BuyingLibrary;
 using BuyingLibrary.Contexts;
 using BuyingLibrary.models.classes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
 namespace Aspnet_server.controllers
 {
+    [Authorize]
     [ApiController]
     [Route("/[controller]")]
     public class BuysController : ControllerBase

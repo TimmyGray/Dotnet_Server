@@ -12,6 +12,7 @@ Each controller implemented only methods that are using in frontend (not of all 
 Simple email sending also implemented  
 This server using controllers sending purchases, cable components and prices to the frontend application and get orders and clients from it and store them in mongo db  
 
+ATTENTION!!For now, I is implementing authenticaton in corresponding branch, so, if wou want working code(without authentication) - take master branch!  g
 
 How to run:  
 1) Clone this repo  

@@ -4,9 +4,11 @@ using BuyingLibrary.models.classes;
 using MongoDB.Bson;
 using BuyingLibrary.Actions;
 using MongoDB.Bson.Serialization;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Aspnet_server.controllers
 {
+    [Authorize]
     [ApiController]
     [Route("/[controller]")]
     public class PricesController : ControllerBase

@@ -4,9 +4,11 @@ using BuyingLibrary.models.classes;
 using BuyingLibrary.models.interfaces;
 using MongoDB.Driver;
 using Aspnet_server.mail_sender;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Aspnet_server.controllers
 {
+    [Authorize]
     [ApiController]
     [Route("/[controller]")]
     public class OrdersController:ControllerBase

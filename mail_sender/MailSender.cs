@@ -28,7 +28,7 @@ namespace Aspnet_server.mail_sender
             //Console.WriteLine($"{_options.Value.Email}");
             //Console.WriteLine($"{_options.Value.Host}");
             //Console.WriteLine($"{_options.Value.Port}");
-            //Console.WriteLine($"{_options.Value.Name}");
+            //Console.WriteLine($"{_options.Value.Name}"); mn
 
             if ( _options.Value.Email=="" ) {
                 Setup = false;
