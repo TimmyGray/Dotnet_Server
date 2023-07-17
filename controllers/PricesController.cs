@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Aspnet_server.controllers
 {
-    [Authorize]
+    
     [ApiController]
     [Route("/[controller]")]
     public class PricesController : ControllerBase

@@ -51,7 +51,8 @@ namespace Aspnet_server.controllers
 
         }
 
-        [HttpPost("/registration")]
+        [Route("registration")]
+        [HttpPost]
         public async Task<ActionResult<Client>> Registration(RegClientValid regClient)
         {
             var validation_results = new List<ValidationResult>();
@@ -59,9 +60,10 @@ namespace Aspnet_server.controllers
 
             if(Validator.TryValidateObject(regClient,validation_context,validation_results,true))
             {
-                var new_client = service.GetAsync(regClient.Login,regClient.Email);
+                var new_client =await service.GetAsync(regClient.Login,regClient.Email);
                 if (new_client!=null)
                 {
+                    Console.WriteLine(new_client.ToString());
                     return BadRequest(new ArgumentException("This client already exists"));
                 }
 
@@ -82,7 +84,7 @@ namespace Aspnet_server.controllers
             {
                 Console.WriteLine(res.ErrorMessage);
             }
-
+    
             return BadRequest(validation_results);
 
         }

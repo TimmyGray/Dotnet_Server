@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Aspnet_server.controllers
 {
-    [Authorize]
+    
     [ApiController]
     [Route("/[controller]")]
     public class ConnectorsController:ControllerBase

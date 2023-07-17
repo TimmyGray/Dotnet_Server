@@ -9,26 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors();
 builder.Services.AddControllers();
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(opt =>
-    {
-        var jwtsettings = builder.Configuration.GetSection("JwtSettings");
-        JWTOptions options = new JWTOptions(jwtsettings);
-        opt.TokenValidationParameters = new TokenValidationParameters {
-
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = options.ISSUER,
-            ValidAudience = options.AUDIENCE,
-            IssuerSigningKey = options.GetSymmetricKey(),
-
-        };
-
-    });
-
 builder.Services.Configure<ConnectionStringsOptions>(
     builder.Configuration.GetSection(ConnectionStringsOptions.ConnectionStrings));
 
@@ -38,11 +18,40 @@ builder.Services.Configure<DataBaseOptions>(
 builder.Services.Configure<MailOptions>(
     builder.Configuration.GetSection(MailOptions.EmailSettings));
 
-//builder.Configuration.AddConfiguration(builder.Configuration.GetSection("JwtSettings"));
+//builder.Services.Configure<JWTOptions>(builder.Configuration.GetSection("JWTSettings"));
 //var jwtsettings = builder.Configuration.GetSection("JwtSettings");
 
 builder.Services.AddSingleton<MongoContext>();
 builder.Services.AddSingleton<MailSender>();
+
+JWTOptions jWTOptions = new JWTOptions(builder.Configuration.GetSection("JWTSettings"));
+builder.Services.AddSingleton(jWTOptions);
+
+builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opt =>
+    {
+        //var jwtsettings = builder.Configuration.GetSection("JWTSettings");
+        
+        //JWTOptions options = new JWTOptions(jwtsettings);
+        Console.WriteLine(jWTOptions.ISSUER);
+        Console.WriteLine(jWTOptions.KEY);
+        Console.WriteLine(jWTOptions.AUDIENCE);
+       
+        opt.TokenValidationParameters = new TokenValidationParameters {
+
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jWTOptions.ISSUER,
+            ValidAudience = jWTOptions.AUDIENCE,
+            IssuerSigningKey = jWTOptions.GetSymmetricKey(),
+
+        };
+
+    });
+
 //builder.Services.AddSingleton<JWTOptions>();
 
 var app = builder.Build();

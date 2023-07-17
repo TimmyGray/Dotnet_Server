@@ -7,7 +7,7 @@ using MongoDB.Bson;
 
 namespace Aspnet_server.controllers
 {
-    [Authorize]
+    
     [ApiController]
     [Route("/[controller]")]
     public class BuysController : ControllerBase
