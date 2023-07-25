@@ -81,9 +81,14 @@ namespace Aspnet_server.controllers
 
 
             var result = await service.PostAsync(neworder);
-        
-            Console.WriteLine("Try to send mail...");
-            mailsender.SendMail(neworder,false);
+
+            if (mailsender.Setup)
+            {
+
+                Console.WriteLine("Try to send mail...");
+                mailsender.SendMail(neworder, false);
+
+            }
 
 
             return result;

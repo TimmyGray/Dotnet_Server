@@ -51,8 +51,7 @@ namespace Aspnet_server.controllers
 
         }
 
-        [Route("registration")]
-        [HttpPost]
+        [HttpPost("registration")]
         public async Task<ActionResult<Client>> Registration(RegClientValid regClient)
         {
             var validation_results = new List<ValidationResult>();
@@ -72,7 +71,7 @@ namespace Aspnet_server.controllers
                 var result = await service.PostAsync(client);
                 var response = new { 
                     access_token = MakeToken(result),
-                    login = result.Name,
+                    login = result.Login,
                     email = result.Email,
                 };
 
@@ -89,7 +88,7 @@ namespace Aspnet_server.controllers
 
         }
 
-        [HttpPost("/login")]
+        [HttpPost("login")]
         public async Task<ActionResult> Login(LogClientValid logClient)
         {
             List<ValidationResult> validation_results = new List<ValidationResult>();
@@ -104,7 +103,7 @@ namespace Aspnet_server.controllers
                     {
                         var response = new{
                             access_token = MakeToken(client),
-                            login = client.Name,
+                            login = client.Login,
                             email = client.Email,
                         };
 
@@ -128,13 +127,13 @@ namespace Aspnet_server.controllers
         {
             List<Claim> claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name,client.Name),
+                new Claim(ClaimTypes.Name,client.Login),
                 new Claim(ClaimTypes.Email,client.Email),
             };
 
             var jwt = new JwtSecurityToken(
                 issuer: _jwtopt.ISSUER,
-                audience: _jwtopt.ISSUER,
+                audience: _jwtopt.AUDIENCE,
                 claims: claims,
                 expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(30)),
                 signingCredentials: new SigningCredentials(_jwtopt.GetSymmetricKey(),SecurityAlgorithms.HmacSha256)

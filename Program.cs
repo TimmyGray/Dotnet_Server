@@ -31,28 +31,20 @@ builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
-        //var jwtsettings = builder.Configuration.GetSection("JWTSettings");
-        
-        //JWTOptions options = new JWTOptions(jwtsettings);
-        Console.WriteLine(jWTOptions.ISSUER);
-        Console.WriteLine(jWTOptions.KEY);
-        Console.WriteLine(jWTOptions.AUDIENCE);
        
         opt.TokenValidationParameters = new TokenValidationParameters {
 
             ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
             ValidIssuer = jWTOptions.ISSUER,
+            ValidateAudience = true,
             ValidAudience = jWTOptions.AUDIENCE,
+            ValidateLifetime = true,
             IssuerSigningKey = jWTOptions.GetSymmetricKey(),
+            ValidateIssuerSigningKey = true,
 
         };
 
     });
-
-//builder.Services.AddSingleton<JWTOptions>();
 
 var app = builder.Build();
 var conopt = app.Services.GetService<IOptions<ConnectionStringsOptions>>();
@@ -74,8 +66,6 @@ app.MapGet("/",async (context) =>
         Console.WriteLine("The Email provider does not setup! Clients will not recieve message when the order makes");
         Console.ResetColor();
     }
-    //var sender = app.Services.GetService<MailSender>();
-    //Console.WriteLine($"Sender in program:{sender.Setup}");
 
     await context.Response.WriteAsync($"Server listen on:{appurl}\nServer listen from:{clienturl}\n{email}");
 

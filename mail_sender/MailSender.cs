@@ -37,14 +37,15 @@ namespace Aspnet_server.mail_sender
             else
             {
                 Setup = true;
-            }
-            email = _options.Value.Email;
-            password = _options.Value.Password;
-            host = _options.Value.Host;
-            hostport = Convert.ToInt32(_options.Value.Port);
-            name = _options.Value.Name;
+                email = _options.Value.Email;
+                password = _options.Value.Password;
+                host = _options.Value.Host;
+                hostport = Convert.ToInt32(_options.Value.Port);
+                name = _options.Value.Name;
 
-            Console.WriteLine("The mailsender created!");
+                Console.WriteLine("The mailsender created!");
+
+            }
         }
 
         private string MakeBody(Order order,bool isRus)
@@ -53,7 +54,7 @@ namespace Aspnet_server.mail_sender
 
             if (isRus) {
 
-                body.AppendLine($"Здравствуйте,{order.client.Name}!");
+                body.AppendLine($"Здравствуйте,{order.Client.Login}!");
                 body.AppendLine($"Некоторое время назад, вы сделали заказ {order._id}:");
                 foreach (var buy in order.Buys)
                 {
@@ -66,7 +67,7 @@ namespace Aspnet_server.mail_sender
             }
             else
             {
-                body.AppendLine($"Hello,{order.client.Name}!");
+                body.AppendLine($"Hello,{order.Client.Login}!");
                 body.AppendLine($"Some times ago you make an order: {order._id}:");
                 foreach (var buy in order.Buys)
                 {
@@ -92,8 +93,8 @@ namespace Aspnet_server.mail_sender
 
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress($"{name}", email));
-            message.To.Add(new MailboxAddress(order.client.Name,order.client.Email));
-            message.Subject = $"{order.client.Name}, your order created!";
+            message.To.Add(new MailboxAddress(order.Client.Login,order.Client.Email));
+            message.Subject = $"{order.Client.Login}, your order created!";
             message.Body = new TextPart("plain")
             {
                 Text = MakeBody(order,isRus)
