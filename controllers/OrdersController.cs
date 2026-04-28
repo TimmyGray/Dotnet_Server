@@ -1,127 +1,88 @@
-﻿using BuyingLibrary.Contexts;
-using Microsoft.AspNetCore.Mvc;
-using BuyingLibrary.models.classes;
-using BuyingLibrary.models.interfaces;
-using MongoDB.Driver;
 using Aspnet_server.mail_sender;
+using BuyingLibrary.Contexts;
+using BuyingLibrary.models.classes;
+using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 
-namespace Aspnet_server.controllers
+namespace Aspnet_server.controllers;
+
+[ApiController]
+[Route("[controller]")]
+public class OrdersController : ControllerBase
 {
-    [ApiController]
-    [Route("/[controller]")]
-    public class OrdersController:ControllerBase
+    private readonly OrderService _service;
+    private readonly IMailSender _mailSender;
+
+    public OrdersController(OrderService service, IMailSender mailSender)
     {
-        private readonly OrderService service;
-        private readonly MailSender mailsender;
+        _service = service;
+        _mailSender = mailSender;
+    }
 
-        public OrdersController(MongoContext context, MailSender _mailsender)
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public Task<List<Order>> GetOrders(CancellationToken cancellationToken) =>
+        _service.GetAsync(cancellationToken);
+
+    [HttpGet("{clientId:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<List<Order>>> GetOrdersByClient(string clientId, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(clientId, out _))
         {
-            Console.WriteLine("Order Controller");
-            Console.WriteLine($"EmailMail sender setup - {_mailsender.Setup}");
-            mailsender = _mailsender;
-            service = new OrderService(context);
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["clientId"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpGet]
-        public async Task<List<Order>> GetOrders()
+        var orders = await _service.GetByClientAsync(clientId, cancellationToken);
+        return Ok(orders);
+    }
+
+    [HttpGet("{clientId:length(24)}/{orderId:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Order>> GetByClientAndOrder(string clientId, string orderId, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(clientId, out _) || !ObjectId.TryParse(orderId, out _))
         {
-
-            return await service.GetAsync();
-
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpGet("{clientid:length(24)}")]
-        
-        public async Task<ActionResult<List<Order>>> GetOrders(string clientid)
+        var order = await _service.GetByClientAndOrderAsync(clientId, orderId, cancellationToken);
+        return order is null ? NotFound() : Ok(order);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<ActionResult<Order>> PostOrder([FromBody] Order newOrder, CancellationToken cancellationToken)
+    {
+        var result = await _service.PostAsync(newOrder, cancellationToken);
+        await _mailSender.SendOrderCreatedAsync(result, isRus: false, cancellationToken);
+        return CreatedAtAction(nameof(GetByClientAndOrder), new { clientId = result.Client?.Id, orderId = result.Id }, result);
+    }
+
+    [HttpPut]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Order>> PutOrder([FromBody] Order updatedOrder, CancellationToken cancellationToken)
+    {
+        var result = await _service.PutAsync(updatedOrder, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpDelete("{id:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Order>> DeleteOrder(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out _))
         {
-
-            var orders = await service.GetAsync(clientid);
-            if (orders!=null)
-            {
-                foreach (var o in orders)
-                {
-
-                    Console.WriteLine(o.ToString());
-
-                }
-                return Ok(orders);
-            }
-
-            return BadRequest();
-
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpGet("{clientid:length(24)}/{orderid:length(24)}")]
-        public async Task<ActionResult<Order>> GetAsync(string clientid,string orderid)
-        {
-            
-            var order = await service.GetAsync(clientid, orderid);
-            if (order!=null)
-            {
-                Console.WriteLine(order.ToString());
-                return Ok(order);
-            }
-
-            return BadRequest();
-
-        }
-        
-
-        [HttpPost]
-        public async Task<ActionResult<Order>> PostOrder(Order neworder)
-        {
-            Console.WriteLine("Post order controller");
-
-            if (neworder == null)
-            {
-                return NoContent();
-            }
-
-
-            var result = await service.PostAsync(neworder);
-        
-            Console.WriteLine("Try to send mail...");
-            mailsender.SendMail(neworder,false);
-
-
-            return result;
-
-        }
-
-        [HttpPut]
-        public async Task<ActionResult<Order>> PutOrder(Order neworder)
-        {
-
-            if (neworder == null)
-            {
-                return NoContent();
-            }
-
-            var result = await service.PutAsync(neworder);
-
-            if (result==null)
-            {
-                return NotFound();
-            }
-            
-            return result;
-
-
-        }
-
-        [HttpDelete("{id:length(24)}")]
-        public async Task<ActionResult<Order>> DeleteOrder(string id)
-        {
-
-            var result = await service.DeleteAsync(id);
-            if (result==null)
-            {
-                return NotFound();
-            }
-            return result;
-
-        }
-
-
+        var result = await _service.DeleteAsync(id, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
     }
 }

@@ -1,33 +1,22 @@
-﻿using BuyingLibrary.Contexts;
+using BuyingLibrary.Contexts;
 using BuyingLibrary.models.classes;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Aspnet_server.controllers
+namespace Aspnet_server.controllers;
+
+[ApiController]
+[Route("[controller]")]
+public class ConnectorsController : ControllerBase
 {
-    [ApiController]
-    [Route("/[controller]")]
-    public class ConnectorsController:ControllerBase
+    private readonly IService<Connector> _service;
+
+    public ConnectorsController(IService<Connector> service)
     {
-        private readonly IService<Connector> service;
-        
-        public ConnectorsController(MongoContext context)
-        {
-            service = new ConnectorService(context);
-        }
-
-        [HttpGet]
-        public async Task<List<Connector>> GetConnectors()
-        {
-            
-            var Connectors = await service.GetAsync();
-            foreach(var con in Connectors)
-            {
-                con.Count = 1;
-            }
-
-            return Connectors;
-
-        }
-
+        _service = service;
     }
+
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public Task<List<Connector>> GetConnectors(CancellationToken cancellationToken) =>
+        _service.GetAsync(cancellationToken);
 }

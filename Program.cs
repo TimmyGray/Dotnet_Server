@@ -1,58 +1,83 @@
-using BuyingLibrary.Contexts;
-using BuyingLibrary.AppSettings;
 using Aspnet_server.mail_sender;
-using Microsoft.Extensions.Options;
+using Aspnet_server.Infrastructure;
+using BuyingLibrary.Actions;
+using BuyingLibrary.AppSettings;
+using BuyingLibrary.Contexts;
+using BuyingLibrary.models.classes;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCors();
+builder.Services.AddProblemDetails();
+builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<MongoHealthCheck>("mongodb")
+    .AddCheck<MailHealthCheck>("mail");
 
-builder.Services.Configure<ConnectionStringsOptions>(
-    builder.Configuration.GetSection(ConnectionStringsOptions.ConnectionStrings));
+builder.Services
+    .AddOptions<ConnectionStringsOptions>()
+    .Bind(builder.Configuration.GetSection(ConnectionStringsOptions.ConnectionStrings))
+    .Validate(opt => !string.IsNullOrWhiteSpace(opt.ClientUrl), "ConnectionStrings:ClientUrl is required")
+    .ValidateOnStart();
 
-builder.Services.Configure<DataBaseOptions>(
-    builder.Configuration.GetSection(DataBaseOptions.DataBaseSettings));
+builder.Services
+    .AddOptions<DataBaseOptions>()
+    .Bind(builder.Configuration.GetSection(DataBaseOptions.DataBaseSettings))
+    .Validate(opt => !string.IsNullOrWhiteSpace(opt.DataBaseConnection), "DataBaseSettings:DataBaseConnection is required")
+    .Validate(opt => !string.IsNullOrWhiteSpace(opt.DataBase), "DataBaseSettings:DataBase is required")
+    .ValidateOnStart();
 
-builder.Services.Configure<MailOptions>(
-    builder.Configuration.GetSection(MailOptions.EmailSettings));
+builder.Services
+    .AddOptions<MailOptions>()
+    .Bind(builder.Configuration.GetSection(MailOptions.EmailSettings))
+    .ValidateOnStart();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ClientCors", policy =>
+    {
+        var clientUrl = builder.Configuration[$"{ConnectionStringsOptions.ConnectionStrings}:ClientUrl"];
+        if (!string.IsNullOrWhiteSpace(clientUrl))
+        {
+            policy.WithOrigins(clientUrl)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
 
 builder.Services.AddSingleton<MongoContext>();
-builder.Services.AddSingleton<MailSender>();
+builder.Services.AddScoped<IService<Buy>, BuyingService>();
+builder.Services.AddScoped<IService<Client>, ClientService>();
+builder.Services.AddScoped<IService<Coil>, CoilService>();
+builder.Services.AddScoped<IService<Connector>, ConnectorService>();
+builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<PriceService>();
+builder.Services.AddScoped<ImageService>();
+builder.Services.AddScoped<DeserAction>();
+builder.Services.AddScoped<IMailSender, MailSender>();
 
 var app = builder.Build();
-var conopt = app.Services.GetService<IOptions<ConnectionStringsOptions>>();
-app.UseCors((builder) => builder.WithOrigins(conopt.Value.ClientUrl)
-.AllowAnyHeader()
-.AllowAnyMethod()); 
 
-app.MapControllers();
-app.MapGet("/",async (context) =>
+app.UseExceptionHandler();
+if (!app.Environment.IsDevelopment())
 {
-    var conf = app.Configuration;
-    var appurl = conopt.Value.AppUrl;
-    var clienturl = conopt.Value.ClientUrl;
-    var email = conf["EmailSettings:Email"];
-    if (email=="")
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("The Email provider does not setup! Clients will not recieve message when the order makes");
-        Console.ResetColor();
-    }
-    //var sender = app.Services.GetService<MailSender>();
-    //Console.WriteLine($"Sender in program:{sender.Setup}");
+    app.UseHsts();
+}
 
-    await context.Response.WriteAsync($"Server listen on:{appurl}\nServer listen from:{clienturl}\n{email}");
-
-});
+app.UseHttpsRedirection();
+app.UseCors("ClientCors");
 
 if (app.Environment.IsDevelopment())
 {
-    app.Run(conopt.Value.AppUrl);
-}
-else
-{
-    app.Run();
-
+    app.MapOpenApi();
 }
 
+app.MapControllers();
+app.MapHealthChecks("/health");
+app.MapGet("/", () => Results.Ok(new { message = "Buying server is running" }));
+
+app.Run();
+
+public partial class Program;

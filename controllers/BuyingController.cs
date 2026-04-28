@@ -1,111 +1,87 @@
-﻿using BuyingLibrary;
 using BuyingLibrary.Contexts;
 using BuyingLibrary.models.classes;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
-namespace Aspnet_server.controllers
+namespace Aspnet_server.controllers;
+
+[ApiController]
+[Route("[controller]")]
+public class BuysController : ControllerBase
 {
-    [ApiController]
-    [Route("/[controller]")]
-    public class BuysController : ControllerBase
+    private readonly IService<Buy> _service;
+    private readonly ImageService _imageService;
+
+    public BuysController(IService<Buy> service, ImageService imageService)
     {
-        private readonly IService<Buy> service;
-        private readonly ImageService imageService;
+        _service = service;
+        _imageService = imageService;
+    }
 
-        public BuysController(MongoContext context)
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public Task<List<Buy>> GetBuys(CancellationToken cancellationToken) =>
+        _service.GetAsync(cancellationToken);
+
+    [HttpGet("{id:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Buy>> GetBuy(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out _))
         {
-            service = new BuyingService(context);
-            imageService = new ImageService(context);
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpGet]
-        public async Task<List<Buy>> GetBuys()
+        var buy = await _service.GetAsync(id, cancellationToken);
+        return buy is null ? NotFound() : Ok(buy);
+    }
+
+    [HttpGet("image/{id:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetImage(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out _))
         {
-            //var images = await imageService.GetAllAsync();
-            var buys = await service.GetAsync();
-            foreach (var buy in buys)
-            {
-                //buy.Image.Data = images.FirstOrDefault(i => i._id == buy.Image._id).Data;
-
-                //Console.WriteLine($"{buy.Image.Data.Length}");
-
-                buy.Count = 1;
-                Console.WriteLine(buy.ToString());
-            }
-            return buys;
-
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpGet("id:length(24)")]
-        public async Task<ActionResult<Buy>> GetBuy(string id)
+        Response.ContentType = "application/octet-stream";
+        await _imageService.GetOneAsync(id, Response.Body, cancellationToken);
+        return new EmptyResult();
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<ActionResult<Buy>> PostBuy([FromBody] Buy newBuy, CancellationToken cancellationToken)
+    {
+        var result = await _service.PostAsync(newBuy, cancellationToken);
+        return CreatedAtAction(nameof(GetBuy), new { id = result.Id }, result);
+    }
+
+    [HttpPut]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Buy>> PutBuy([FromBody] Buy updatedBuy, CancellationToken cancellationToken)
+    {
+        var result = await _service.PutAsync(updatedBuy, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpDelete("{id:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Buy>> DeleteBuy(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out _))
         {
-
-            var buy = await service.GetAsync(id);
-            if (buy != null)
-            {
-                return buy;
-            }
-            return NotFound();
-
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [Route("getimage/{id}")]
-        public async Task GetImage(string id)
-        {
-            Console.WriteLine("Gt Image");
-            await imageService.GetOne(id,Response.Body);
-            //return Response;
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<Buy>> PostBuy(Buy newbuy)
-        {
-            if (newbuy == null)
-            {
-                return NoContent();
-            } 
-
-            var result = await service.PostAsync(newbuy);
-
-            return result;
-
-        }
-
-        [HttpPut]
-        public async Task<ActionResult<Buy>> PutBuy(Buy newbuy)
-        {
-
-            if (newbuy == null)
-            {
-                return NoContent();
-            }
-
-            var result = await service.PutAsync(newbuy);
-
-            if (result == null)
-            {
-                return NotFound();
-            }
-
-            return result;
-
-
-        }
-
-        [HttpDelete("id:length(24)")]
-        public async Task<ActionResult<Buy>> DeleteBuy(string id)
-        {
-
-            var result = await service.DeleteAsync(id);
-            if (result == null)
-            {
-                return NotFound();
-            }
-            return result;
-
-        }
-
-
+        var result = await _service.DeleteAsync(id, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
     }
 }

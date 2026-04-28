@@ -1,130 +1,95 @@
-﻿using BuyingLibrary.AppSettings;
+using BuyingLibrary.AppSettings;
 using BuyingLibrary.models.classes;
-using MailKit.Net;
 using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 
+namespace Aspnet_server.mail_sender;
 
-namespace Aspnet_server.mail_sender
+public sealed class MailSender : IMailSender
 {
-    public class MailSender
+    private readonly ILogger<MailSender> _logger;
+    private readonly MailOptions _options;
+
+    public MailSender(IOptions<MailOptions> options, ILogger<MailSender> logger)
     {
-        private IOptions<MailOptions> _options;
-        private string email;
-        private string password;
-        private string name;
-        private string host;
-        private int hostport;
-        public bool Setup { get; }
+        _options = options.Value;
+        _logger = logger;
+    }
 
-        public MailSender(IOptions<MailOptions> options )
+    private bool IsConfigured() =>
+        !string.IsNullOrWhiteSpace(_options.Email) &&
+        !string.IsNullOrWhiteSpace(_options.Password) &&
+        !string.IsNullOrWhiteSpace(_options.Host) &&
+        _options.Port > 0;
+
+    private string MakeBody(Order order, bool isRus)
+    {
+        var body = new StringBuilder();
+
+        if (isRus)
         {
-            _options = options;
-            //Console.WriteLine($"{_options.Value.Email}");
-            //Console.WriteLine($"{_options.Value.Host}");
-            //Console.WriteLine($"{_options.Value.Port}");
-            //Console.WriteLine($"{_options.Value.Name}");
-
-            if ( _options.Value.Email=="" ) {
-                Setup = false;
-                Console.WriteLine("Settings not read!");
-            }
-            else
+            body.AppendLine($"Здравствуйте, {order.Client?.Name}!");
+            body.AppendLine($"Некоторое время назад вы сделали заказ {order.Id}:");
+            foreach (var buy in order.Buys)
             {
-                Setup = true;
+                body.AppendLine(buy.ToString());
             }
-            email = _options.Value.Email;
-            password = _options.Value.Password;
-            host = _options.Value.Host;
-            hostport = Convert.ToInt32(_options.Value.Port);
-            name = _options.Value.Name;
 
-            Console.WriteLine("The mailsender created!");
-        }
-
-        private string MakeBody(Order order,bool isRus)
-        {
-            StringBuilder body = new StringBuilder();
-
-            if (isRus) {
-
-                body.AppendLine($"Здравствуйте,{order.client.Name}!");
-                body.AppendLine($"Некоторое время назад, вы сделали заказ {order._id}:");
-                foreach (var buy in order.Buys)
-                {
-                    body.AppendLine(buy.ToString());
-                }
-                body.AppendLine("Об изменении статуса заказа вам придет отдельное сообщение");
-                body.AppendLine($"Статус вашего заказа:{order.Status}");
-                body.AppendLine($"Если у вас есть какие-то вопросы - пишите на почту {email}, с указанием номера заказа");
-
-            }
-            else
-            {
-                body.AppendLine($"Hello,{order.client.Name}!");
-                body.AppendLine($"Some times ago you make an order: {order._id}:");
-                foreach (var buy in order.Buys)
-                {
-                    body.AppendLine(buy.ToString());
-                }
-                body.AppendLine("When the status order has changed - you will receive a message on your email");
-                body.AppendLine($"Current status order:{order.Status}");
-                body.AppendLine($"If you have some questions - write on {email} with order id");
-
-            }
+            body.AppendLine("Об изменении статуса заказа вам придет отдельное сообщение.");
+            body.AppendLine($"Статус вашего заказа: {order.Status}");
+            body.AppendLine($"Если у вас есть вопросы — пишите на почту {_options.Email} с указанием номера заказа.");
             return body.ToString();
         }
 
-        internal void SendMail(Order order, bool isRus)
+        body.AppendLine($"Hello, {order.Client?.Name}!");
+        body.AppendLine($"You created order {order.Id}:");
+        foreach (var buy in order.Buys)
         {
-            Console.WriteLine("Mail send method");
-            //CheckSettings();
-            if (!Setup)
-            {
-                return;
-            }
-            Console.WriteLine("All right!");
-
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress($"{name}", email));
-            message.To.Add(new MailboxAddress(order.client.Name,order.client.Email));
-            message.Subject = $"{order.client.Name}, your order created!";
-            message.Body = new TextPart("plain")
-            {
-                Text = MakeBody(order,isRus)
-            
-            };
-
-            try
-            {
-                using (SmtpClient client = new SmtpClient())
-                {
-
-                    client.Connect($"{host}", hostport, MailKit.Security.SecureSocketOptions.SslOnConnect);
-                    client.Authenticate(email, password);
-                    client.Send(message);
-                    client.Disconnect(true);
-
-                }
-                Console.WriteLine("The message sended!");
-            }
-            catch (Exception ex)
-            {
-
-                Console.WriteLine(ex.Message);
-
-            }
-
+            body.AppendLine(buy.ToString());
         }
 
-
-        
-
+        body.AppendLine("You will receive a notification when order status changes.");
+        body.AppendLine($"Current order status: {order.Status}");
+        body.AppendLine($"If you have questions, write to {_options.Email} with your order id.");
+        return body.ToString();
     }
 
+    public async Task SendOrderCreatedAsync(Order order, bool isRus, CancellationToken cancellationToken = default)
+    {
+        if (!IsConfigured())
+        {
+            _logger.LogWarning("Email settings are missing. Skipping email notification.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(order.Client?.Email))
+        {
+            _logger.LogWarning("Order has no client email. Skipping email notification.");
+            return;
+        }
+
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(_options.Name, _options.Email));
+        message.To.Add(new MailboxAddress(order.Client.Name, order.Client.Email));
+        message.Subject = $"{order.Client.Name}, your order has been created";
+        message.Body = new TextPart("plain") { Text = MakeBody(order, isRus) };
+
+        try
+        {
+            using var client = new SmtpClient();
+            await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.SslOnConnect, cancellationToken);
+            await client.AuthenticateAsync(_options.Email, _options.Password, cancellationToken);
+            await client.SendAsync(message, cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
+
+            _logger.LogInformation("Order creation email sent.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send order creation email.");
+        }
+    }
 }

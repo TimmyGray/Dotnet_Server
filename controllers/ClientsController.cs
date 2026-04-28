@@ -1,64 +1,64 @@
-﻿using BuyingLibrary.Contexts;
+using Aspnet_server.Contracts;
+using BuyingLibrary.Contexts;
 using BuyingLibrary.models.classes;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 
+namespace Aspnet_server.controllers;
 
-namespace Aspnet_server.controllers
+[ApiController]
+[Route("[controller]")]
+public class ClientsController : ControllerBase
 {
-    [ApiController]
-    [Route("/[controller]")]
-    public class ClientsController:ControllerBase
+    private readonly IService<Client> _service;
+
+    public ClientsController(IService<Client> service)
     {
-        private readonly IService<Client> service;
+        _service = service;
+    }
 
-        public ClientsController(MongoContext context)
+    [HttpGet("{id:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Client>> GetClient(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out _))
         {
-
-            service = new ClientService(context);
-
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpGet("id:length(24)")]
-        public async Task<ActionResult<Client>> GetClient(string id)
+        var client = await _service.GetAsync(id, cancellationToken);
+        return client is null ? NotFound() : Ok(client);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<ActionResult<Client>> PostClient([FromBody] ClientUpsertRequest request, CancellationToken cancellationToken)
+    {
+        var newClient = new Client
         {
+            Id = request.Id,
+            Name = request.Name,
+            Email = request.Email
+        };
 
-            var client = await service.GetAsync(id);
-            
-            if (client!=null)
-            {
-                return Ok(client);
-            }
+        var result = await _service.PostAsync(newClient, cancellationToken);
+        return CreatedAtAction(nameof(GetClient), new { id = result.Id }, result);
+    }
 
-            return BadRequest();
-
+    [HttpDelete("{id:length(24)}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Client>> DeleteClient(string id, CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(id, out _))
+        {
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["id"] = ["Invalid ObjectId format"] }));
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Client>> PostClient(Client newclient) 
-        {
-            Console.WriteLine("Post client controller");
-            if (newclient._id!="")
-            {
-                var client = await service.GetAsync(newclient._id);
-                if (client != null)
-                {
-                    return Ok(client);
-                    //return BadRequest(client);
-                }
-            }
-
-
-            return await service.PostAsync(newclient);
-        
-        }
-
-        [HttpDelete("id:length(24)")]
-        public async Task<ActionResult<Client>> DeleteClient(string id)
-        {
-
-            return await service.DeleteAsync(id);
-
-        }
-
+        var result = await _service.DeleteAsync(id, cancellationToken);
+        return result is null ? NotFound() : Ok(result);
     }
 }
