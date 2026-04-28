@@ -58,13 +58,13 @@ Set values in `appsettings.json` / environment variables:
 ```bash
 dotnet restore Aspnet_server.sln
 dotnet build Aspnet_server.sln
-dotnet run --project /home/runner/work/Dotnet_Server/Dotnet_Server/Aspnet_server.csproj
+dotnet run --project Aspnet_server.csproj
 ```
 
 ## Test
 
 ```bash
-dotnet test /home/runner/work/Dotnet_Server/Dotnet_Server/tests/Aspnet_server.Tests/Aspnet_server.Tests.csproj
+dotnet test tests/Aspnet_server.Tests/Aspnet_server.Tests.csproj
 ```
 
 ## API conventions

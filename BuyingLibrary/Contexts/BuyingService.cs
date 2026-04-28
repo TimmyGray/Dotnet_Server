@@ -22,27 +22,27 @@ public sealed class BuyingService : IService<Buy>
 
     public async Task<Buy?> GetAsync(string id, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching buy with id {Id}.", id);
+        _logger.LogDebug("Fetching buy by id.");
         return await _collection.Find(b => b.Id == id).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<Buy> PostAsync(Buy newBuy, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Inserting new buy: {Name}.", newBuy.Name);
+        _logger.LogInformation("Inserting new buy.");
         await _collection.InsertOneAsync(newBuy, cancellationToken: cancellationToken);
         return newBuy;
     }
 
     public async Task<Buy?> PutAsync(Buy updatedBuy, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Replacing buy with id {Id}.", updatedBuy.Id);
+        _logger.LogInformation("Replacing buy by id.");
         var filter = Builders<Buy>.Filter.Eq(b => b.Id, updatedBuy.Id);
         return await _collection.FindOneAndReplaceAsync(filter, updatedBuy, cancellationToken: cancellationToken);
     }
 
     public async Task<Buy?> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting buy with id {Id}.", id);
+        _logger.LogInformation("Deleting buy by id.");
         return await _collection.FindOneAndDeleteAsync(b => b.Id == id, cancellationToken: cancellationToken);
     }
 }

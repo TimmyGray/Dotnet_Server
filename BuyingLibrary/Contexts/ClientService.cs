@@ -22,13 +22,13 @@ public sealed class ClientService : IService<Client>
 
     public async Task<Client?> GetAsync(string id, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching client with id {Id}.", id);
+        _logger.LogDebug("Fetching client by id.");
         return await _collection.Find(c => c.Id == id).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<Client> PostAsync(Client client, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Creating client with email {Email} if it does not already exist.", client.Email);
+        _logger.LogInformation("Creating client if not already existing.");
         var existing = await _collection.Find(c => c.Email == client.Email)
                                          .FirstOrDefaultAsync(cancellationToken);
         if (existing is not null)
@@ -50,7 +50,7 @@ public sealed class ClientService : IService<Client>
 
     public async Task<Client?> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting client with id {Id}.", id);
+        _logger.LogInformation("Deleting client by id.");
         return await _collection.FindOneAndDeleteAsync(c => c.Id == id, cancellationToken: cancellationToken);
     }
 }

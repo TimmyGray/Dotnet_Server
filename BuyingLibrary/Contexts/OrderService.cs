@@ -22,7 +22,7 @@ public sealed class OrderService : IService<Order>
 
     public async Task<List<Order>> GetByClientAsync(string clientId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching orders for client {ClientId}.", clientId);
+        _logger.LogDebug("Fetching orders for client.");
         return await _collection
             .Find(o => o.Client != null && o.Client.Id == clientId)
             .ToListAsync(cancellationToken);
@@ -33,7 +33,7 @@ public sealed class OrderService : IService<Order>
         string orderId,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching order {OrderId} for client {ClientId}.", orderId, clientId);
+        _logger.LogDebug("Fetching order for client.");
         return await _collection
             .Find(o => o.Client != null && o.Client.Id == clientId && o.Id == orderId)
             .FirstOrDefaultAsync(cancellationToken);
@@ -58,7 +58,7 @@ public sealed class OrderService : IService<Order>
                     buy.Image.Id = ObjectId.GenerateNewId().ToString();
                 }
                 buy.IsCustom = true;
-                _logger.LogDebug("Assigned new id {Id} to custom buy.", buy.Id);
+                _logger.LogDebug("Assigned new id to custom buy.");
             }
         }
 
@@ -68,14 +68,14 @@ public sealed class OrderService : IService<Order>
 
     public async Task<Order?> PutAsync(Order updatedOrder, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Replacing order with id {Id}.", updatedOrder.Id);
+        _logger.LogInformation("Replacing order by id.");
         var filter = Builders<Order>.Filter.Eq(o => o.Id, updatedOrder.Id);
         return await _collection.FindOneAndReplaceAsync(filter, updatedOrder, cancellationToken: cancellationToken);
     }
 
     public async Task<Order?> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting order with id {Id}.", id);
+        _logger.LogInformation("Deleting order by id.");
         return await _collection.FindOneAndDeleteAsync(o => o.Id == id, cancellationToken: cancellationToken);
     }
 }

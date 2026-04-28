@@ -10,6 +10,7 @@ namespace Aspnet_server.controllers;
 [Route("[controller]")]
 public class PricesController : ControllerBase
 {
+    private const string ItemOfPriceFieldName = "itemofprice";
     private readonly PriceService _service;
     private readonly DeserAction _deser;
 
@@ -28,7 +29,7 @@ public class PricesController : ControllerBase
 
         foreach (var document in documents)
         {
-            var item = _deser.DeserBson(document["itemofprice"].AsBsonDocument);
+            var item = _deser.DeserBson(document[ItemOfPriceFieldName].AsBsonDocument);
             var price = BsonSerializer.Deserialize<Price>(document);
             price.ItemOfPrice = item;
             result.Add(price);

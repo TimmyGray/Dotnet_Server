@@ -7,6 +7,8 @@ namespace BuyingLibrary.Actions;
 
 public class DeserAction : IActions<Item>
 {
+    private const string LengthFieldName = "length";
+    private const string TypeOfSignalFieldName = "typeofsignal";
     private readonly ILogger<DeserAction> _logger;
 
     public DeserAction(ILogger<DeserAction> logger)
@@ -16,7 +18,7 @@ public class DeserAction : IActions<Item>
 
     public Item DeserBson(BsonDocument document)
     {
-        if (document.Contains("length") && document.Contains("typeofsignal"))
+        if (document.Contains(LengthFieldName) && document.Contains(TypeOfSignalFieldName))
         {
             var coil = BsonSerializer.Deserialize<Coil>(document);
             _logger.LogDebug("Deserialised coil: {Coil}", coil);

@@ -39,7 +39,7 @@ public sealed class ImageService
     public async Task GetOneAsync(string id, Stream destination, CancellationToken cancellationToken = default)
     {
         var objectId = new ObjectId(id);
-        _logger.LogDebug("Streaming image {Id} to destination stream.", id);
+        _logger.LogDebug("Streaming image to destination stream.");
         await _imageStore.DownloadToStreamAsync(objectId, destination, cancellationToken: cancellationToken);
     }
 }

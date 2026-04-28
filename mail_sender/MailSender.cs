@@ -67,7 +67,7 @@ public sealed class MailSender : IMailSender
 
         if (string.IsNullOrWhiteSpace(order.Client?.Email))
         {
-            _logger.LogWarning("Order {OrderId} has no client email. Skipping email notification.", order.Id);
+            _logger.LogWarning("Order has no client email. Skipping email notification.");
             return;
         }
 
@@ -85,11 +85,11 @@ public sealed class MailSender : IMailSender
             await client.SendAsync(message, cancellationToken);
             await client.DisconnectAsync(true, cancellationToken);
 
-            _logger.LogInformation("Order creation email sent for order {OrderId}", order.Id);
+            _logger.LogInformation("Order creation email sent.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send order creation email for order {OrderId}", order.Id);
+            _logger.LogError(ex, "Failed to send order creation email.");
         }
     }
 }
