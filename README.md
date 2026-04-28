@@ -1,27 +1,82 @@
-# Aspnet_server  
-First, a few words about full project. It provides the making of various cables and their purchase. It consists of two large parts:
+# Dotnet_Server
 
-1) Part for seller - https://github.com/TimmyGray/Lovely_Wires; https://github.com/TimmyGray/Lovely_wires_server;  
-2) Part for customer - https://github.com/TimmyGray/Buying_Client; https://github.com/TimmyGray/Dotnet_Server; https://github.com/TimmyGray/BuyingLibrary;  
-Each part contains front and backend with joint mongo database. Most of features implemented, but not all. If something does't work correctly or doesn't work at all -  
-please, write me!In additional,i is writing(Not yet finished) this pet-project for show to potential employer my hard skills. So, it is not real app you should use in your business,ofc=)  
+Modernized ASP.NET Core API server for the BuyingLibrary customer flow.
 
-This is a server for the Staff Buying Client application that you could find by this link https://github.com/TimmyGray/Buying_Client;  
-All models and services using in the app,are placing in the single library https://github.com/TimmyGray/BuyingLibrary;  
-Each controller implemented only methods that are using in frontend (not of all crud operations)  
-Simple email sending also implemented  
-This server using controllers sending purchases, cable components and prices to the frontend application and get orders and clients from it and store them in mongo db  
+## What changed in this rework
 
+- Upgraded platform to **.NET 10**.
+- Migrated to latest **BuyingLibrary v2 API surface** and vendored library source in-repo.
+- Refactored startup for modern hosting:
+  - options binding and startup validation
+  - centralized exception handling with ProblemDetails
+  - explicit CORS policy
+  - HTTPS/HSTS
+  - OpenAPI in development
+  - health checks (`/health`) with Mongo and mail checks
+- Refactored controllers:
+  - fixed route templates
+  - improved HTTP semantics and response codes
+  - added ObjectId validation guards
+  - removed GET side effects
+  - added cancellation token support
+- Hardened mail sender:
+  - async SMTP operations
+  - safer config checks
+  - structured logging
+- Added tests:
+  - unit tests for core controller behavior
+  - integration tests for root and health endpoints
+- Added CI and dependency automation.
 
-How to run:  
-1) Clone this repo  
-2) Clone library repo by this link: https://github.com/TimmyGray/BuyingLibrary and build this project  
-3) Add  refference of buying lib to this progect  
-4) In the appsettings.json, in the ConnectionStrings section you must set: AppUrl -  url of this app and ClientUrl,It the DataBaseSettings - DataBaseConnection to connect to mongodb, DataBase for db name,
-in the EmailSettings(must be creating to set up mailsender) - "Email" - seller's email , "Password" - seller's email password, "Name" - seller's name, "Host" - server url, "Hostport" - server host (optional)
-6) Build this project  
-7) Run Aspnet_server.exe. You will see "Hello there" when you open browser on AppUrl adress  
+## Repository layout
 
-Stack: ASP.NET Core
+- `Aspnet_server.csproj` — API host project
+- `BuyingLibrary/` — shared models/services dependency (v2 source)
+- `controllers/` — API controllers
+- `mail_sender/` — email sender abstraction/implementation
+- `Infrastructure/` — health checks
+- `Contracts/` — request DTOs with annotations
+- `tests/Aspnet_server.Tests/` — unit/integration tests
+- `docs/` — migration, baseline, compatibility, and architecture docs
 
+## Requirements
 
+- .NET SDK 10.x
+- MongoDB 6+
+
+## Configuration
+
+Set values in `appsettings.json` / environment variables:
+
+- `ConnectionStrings:ClientUrl`
+- `DataBaseSettings:DataBaseConnection`
+- `DataBaseSettings:DataBase`
+- `EmailSettings:*` (optional for app startup, required for actual mail sending)
+
+## Run
+
+```bash
+dotnet restore Aspnet_server.sln
+dotnet build Aspnet_server.sln
+dotnet run --project /home/runner/work/Dotnet_Server/Dotnet_Server/Aspnet_server.csproj
+```
+
+## Test
+
+```bash
+dotnet test /home/runner/work/Dotnet_Server/Dotnet_Server/tests/Aspnet_server.Tests/Aspnet_server.Tests.csproj
+```
+
+## API conventions
+
+- Controllers use `[ApiController]` behavior.
+- Invalid identifiers return validation-style `400` responses.
+- Missing entities return `404`.
+- Created resources return `201 Created` where applicable.
+- Unhandled exceptions are translated to RFC7807 responses.
+
+## Detailed documentation
+
+- Baseline/discovery: `docs/discovery-baseline.md`
+- BuyingLibrary compatibility matrix: `docs/buyinglibrary-compatibility-matrix.md`
+- Architecture + Mermaid diagrams: `docs/architecture.md`
